@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap5/css/bootstrap.min.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js" integrity="sha512-pumBsjNRGGqkPzKHndZMaAG+bir374sORyzM3uulLV14lN5LyykqNk8eEeUlUkB3U0M4FApyaHraT65ihJhDpQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+    <div class="hr py-3">
+        <div class="container">
+            <h1 class="text-center">HR chart</h1>
+            <canvas id="myChart"></canvas>
+        </div>
+    </div>
+    <script>
+        let frame_length = 30;
+        let ctx = document.getElementById('myChart').getContext('2d');
+        let xValues = new Array(frame_length).fill(0);
+        let yValues = new Array(frame_length).fill(0);
+        let chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: xValues,
+                datasets: [{
+                    label: 'hr',
+                    data: yValues,
+                    borderColor: 'RGB(100,100,100)',
+                    fill: false,
+                }]
+            },
+            options: {
+                legend: {display: false},
+            }
+        });
+        let time = 0;
+        
+        function updateChart() {
+            $.ajax({
+                url: "{{ url_for('get_data') }}",
+                type: "GET",
+                dataType: 'json',
+                success: function(data) {
+                    console.log(data)
+                    if(chart.data.labels.length >= frame_length) {
+                        chart.data.labels.splice(0, 1);
+                        chart.data.datasets[0].data.splice(0, 1);
+                        chart.data.labels.push(time);
+                        chart.data.datasets[0].data.push(data.value);
+                        
+                        chart.update();
+                    } else {
+                        chart.data.labels.push(time);
+                        chart.data.datasets[0].data.push(data.value);
+                        chart.update();
+                    }
+                },
+                complete: function() {
+                    setTimeout(updateChart, 1000);
+                    time = time +1;
+                    console.log(time)
+                }
+            });
+        }
+
+        updateChart();
+    </script>
+</body>
+</html>
